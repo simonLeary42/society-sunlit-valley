@@ -91,7 +91,7 @@ global.handleAdditionalArtisanMachineOutputs = (
 /**
  * @param {Internal.BlockContainerJS} block
  */
-global.getArtisanMachineData = (block, upgraded, rancher, ancient_aging) => {
+global.getArtisanMachineData = (block, upgraded, rancher, ancientAging) => {
   let machineData = {
     recipes: [],
     stageCount: 0,
@@ -163,7 +163,7 @@ global.getArtisanMachineData = (block, upgraded, rancher, ancient_aging) => {
       };
       break;
     case "society:ancient_cask":
-      if (ancient_aging) {
+      if (ancientAging) {
         if (upgraded) {
           machineData = {
             recipes: global.ancientCaskRecipes,

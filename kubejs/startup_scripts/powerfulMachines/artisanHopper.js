@@ -9,6 +9,11 @@ const artisanMachineCanHaveAdditionalOutput = [
   "society:wine_keg"
 ];
 
+/** 
+ * @param {Internal.Level} level
+ * @param {Internal.BlockContainerJS} block
+ * @param {Internal.BlockContainerJS} artisanMachine
+ */
 global.handleAdditionalArtisanMachineOutputs = (
   level,
   block,
@@ -16,7 +21,6 @@ global.handleAdditionalArtisanMachineOutputs = (
   recipes,
   recipeId,
   upgraded,
-  stages
 ) => {
   switch (artisanMachine.id) {
     case "society:loom": {
@@ -62,7 +66,7 @@ global.handleAdditionalArtisanMachineOutputs = (
       break;
     }
     case "society:aging_cask": {
-      if (stages.has("aged_prize") && rnd5()) {
+      if (artisanMachine.properties.get("aged_prize") && rnd5()) {
         global.insertBelow(level, block, "society:prize_ticket");
       }
       break;
@@ -81,8 +85,12 @@ global.handleAdditionalArtisanMachineOutputs = (
     }
   }
 };
+
 // TODO: make artisan hopper set tappers
-global.getArtisanMachineData = (player, block, upgraded, stages) => {
+/**
+ * @param {Internal.BlockContainerJS} block
+ */
+global.getArtisanMachineData = (block, upgraded) => {
   let machineData = {
     recipes: [],
     stageCount: 0,
@@ -92,7 +100,7 @@ global.getArtisanMachineData = (player, block, upgraded, stages) => {
     soundType: "minecraft:ui.toast.in",
   };
   let rancherOutputCount;
-  if (player.stages.has("rancher") && Math.random() <= 0.2) {
+  if (block.properties.get("rancher") && Math.random() <= 0.2) {
     rancherOutputCount = 2;
   }
   let machineNbt = block.getEntityData();
@@ -154,7 +162,7 @@ global.getArtisanMachineData = (player, block, upgraded, stages) => {
       };
       break;
     case "society:ancient_cask":
-      if (stages.has("ancient_aging")) {
+      if (block.properties.get("ancient_aging")) {
         if (upgraded) {
           machineData = {
             recipes: global.ancientCaskRecipes,
@@ -259,7 +267,12 @@ global.getArtisanMachineData = (player, block, upgraded, stages) => {
   return machineData;
 };
 
-global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
+/** 
+ * @param {Internal.BlockEntityJS} tickEvent
+ * @param {BlockPos} artisanMachinePos
+ * @param {Internal.Player|null} player
+ */
+global.runArtisanHopper = (tickEvent, artisanMachinePos, player = null, delay) => {
   const { level, block, inventory } = tickEvent;
   const server = level.server;
 
@@ -269,12 +282,7 @@ global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
     const nbt = artisanMachine.getEntityData();
     if (!nbt || !nbt.data) return;
     const upgraded = artisanMachine.properties.get("upgraded") == "true";
-    const loadedData = global.getArtisanMachineData(
-      player,
-      artisanMachine,
-      upgraded,
-      player.stages
-    );
+    const loadedData = global.getArtisanMachineData(artisanMachine, upgraded);
     const season = global.getSeasonFromLevel(level);
     const chargingRodOutput = Item.of(
       `${upgraded && season === "winter" ? 3 : 1}x society:battery`
@@ -376,11 +384,10 @@ global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
               recipes,
               resolvedRecipeId,
               upgraded,
-              player.stages
             );
           }
           let sparkstoneSaveChance = 0;
-          if (player.stages.has("slouching_towards_artistry")) {
+          if (artisanMachine.properties.get("slouching_towards_artistry")) {
             sparkstoneSaveChance = Number(currentStage) * 0.05;
           }
           if (!recycleSparkstone && Math.random() > sparkstoneSaveChance) {
@@ -428,7 +435,7 @@ global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
         !aboveBlock.inventory.isEmpty()
       ) {
         let aboveBlockData = aboveBlock.getEntityData();
-        if (aboveBlockData && aboveBlockData.toString().includes("filter_upgrade")) {
+        if (player && aboveBlockData && aboveBlockData.toString().includes("filter_upgrade")) {
           player.tell(Text.translatable("block.society.artisan_hopper.filter").red());
           return;
         }
@@ -500,32 +507,36 @@ global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
   });
 };
 
+/**
+ * @param {Internal.BlockEntityJS} entity
+ */
 global.artisanHopperScan = (entity, radius) => {
   const { block, level } = entity;
   const { x, y, z } = block;
-  let attachedPlayer;
+  let attachedPlayer = null;
   level.getServer().players.forEach((p) => {
     if (p.getUuid().toString() === block.getEntityData().data.owner) {
       attachedPlayer = p;
     }
   });
-  if (attachedPlayer) {
-    let scanBlock;
-    let scannedBlocks = 0;
-    for (let pos of BlockPos.betweenClosed(
-      new BlockPos(x - radius, y - radius, z - radius),
-      [x + radius, y + radius, z + radius]
-    )) {
-      scanBlock = level.getBlock(pos);
-      if (scanBlock.hasTag("society:artisan_machine")) {
-        global.runArtisanHopper(
-          entity,
-          pos.immutable(),
-          attachedPlayer,
-          scannedBlocks * 5
-        );
-        scannedBlocks++;
-      }
+  for (stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
+    block.properties[stage_name] = attachedPlayer ? attachedPlayer.stages.has(stage) : false;
+  }
+  let scanBlock;
+  let scannedBlocks = 0;
+  for (let pos of BlockPos.betweenClosed(
+    new BlockPos(x - radius, y - radius, z - radius),
+    [x + radius, y + radius, z + radius]
+  )) {
+    scanBlock = level.getBlock(pos);
+    if (scanBlock.hasTag("society:artisan_machine")) {
+      global.runArtisanHopper(
+        entity,
+        pos.immutable(),
+        attachedPlayer,
+        scannedBlocks * 5
+      );
+      scannedBlocks++;
     }
   }
 };

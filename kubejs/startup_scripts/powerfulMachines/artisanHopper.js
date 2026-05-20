@@ -90,7 +90,7 @@ global.handleAdditionalArtisanMachineOutputs = (
 /**
  * @param {Internal.BlockContainerJS} block
  */
-global.getArtisanMachineData = (block, upgraded) => {
+global.getArtisanMachineData = (block, upgraded, rancher, ancient_aging, ) => {
   let machineData = {
     recipes: [],
     stageCount: 0,
@@ -100,7 +100,7 @@ global.getArtisanMachineData = (block, upgraded) => {
     soundType: "minecraft:ui.toast.in",
   };
   let rancherOutputCount;
-  if (block.properties.get("rancher") && Math.random() <= 0.2) {
+  if (rancher && Math.random() <= 0.2) {
     rancherOutputCount = 2;
   }
   let machineNbt = block.getEntityData();
@@ -162,7 +162,7 @@ global.getArtisanMachineData = (block, upgraded) => {
       };
       break;
     case "society:ancient_cask":
-      if (block.properties.get("ancient_aging")) {
+      if (ancient_aging) {
         if (upgraded) {
           machineData = {
             recipes: global.ancientCaskRecipes,
@@ -268,12 +268,12 @@ global.getArtisanMachineData = (block, upgraded) => {
 };
 
 /** 
- * @param {Internal.BlockEntityJS} tickEvent
+ * @param {Internal.BlockEntityJS} artisanHopperBlockEntity
  * @param {BlockPos} artisanMachinePos
  * @param {Internal.Player|null} player
  */
-global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
-  const { level, block, inventory } = tickEvent;
+global.runArtisanHopper = (artisanHopperBlockEntity, artisanMachinePos, player, delay) => {
+  const { level, block, inventory } = artisanHopperBlockEntity;
   const server = level.server;
 
   server.scheduleInTicks(delay, () => {
@@ -282,7 +282,12 @@ global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
     const nbt = artisanMachine.getEntityData();
     if (!nbt || !nbt.data) return;
     const upgraded = artisanMachine.properties.get("upgraded") == "true";
-    const loadedData = global.getArtisanMachineData(artisanMachine, upgraded);
+    const loadedData = global.getArtisanMachineData(
+      artisanMachine,
+      upgraded,
+      artisanHopperBlockEntity.data.getBoolean("rancher"),
+      artisanHopperBlockEntity.data.getBoolean("ancient_aging")
+    );
     const season = global.getSeasonFromLevel(level);
     const chargingRodOutput = Item.of(
       `${upgraded && season === "winter" ? 3 : 1}x society:battery`
@@ -520,7 +525,7 @@ global.artisanHopperScan = (entity, radius) => {
     }
   });
   for (stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
-    block.properties[stage_name] = attachedPlayer ? attachedPlayer.stages.has(stage) : false;
+    entity.data.putBoolean(stage_name, attachedPlayer ? attachedPlayer.stages.has(stage) : false);
   }
   let scanBlock;
   let scannedBlocks = 0;

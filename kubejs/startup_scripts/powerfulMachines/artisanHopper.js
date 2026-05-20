@@ -272,7 +272,7 @@ global.getArtisanMachineData = (block, upgraded) => {
  * @param {BlockPos} artisanMachinePos
  * @param {Internal.Player|null} player
  */
-global.runArtisanHopper = (tickEvent, artisanMachinePos, player = null, delay) => {
+global.runArtisanHopper = (tickEvent, artisanMachinePos, player, delay) => {
   const { level, block, inventory } = tickEvent;
   const server = level.server;
 

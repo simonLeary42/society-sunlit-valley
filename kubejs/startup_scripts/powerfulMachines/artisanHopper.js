@@ -21,6 +21,7 @@ global.handleAdditionalArtisanMachineOutputs = (
   recipes,
   recipeId,
   upgraded,
+  agedPrize
 ) => {
   switch (artisanMachine.id) {
     case "society:loom": {
@@ -66,7 +67,7 @@ global.handleAdditionalArtisanMachineOutputs = (
       break;
     }
     case "society:aging_cask": {
-      if (artisanMachine.properties.get("aged_prize") && rnd5()) {
+      if (agedPrize && rnd5()) {
         global.insertBelow(level, block, "society:prize_ticket");
       }
       break;
@@ -90,7 +91,7 @@ global.handleAdditionalArtisanMachineOutputs = (
 /**
  * @param {Internal.BlockContainerJS} block
  */
-global.getArtisanMachineData = (block, upgraded, rancher, ancient_aging, ) => {
+global.getArtisanMachineData = (block, upgraded, rancher, ancient_aging) => {
   let machineData = {
     recipes: [],
     stageCount: 0,
@@ -389,10 +390,11 @@ global.runArtisanHopper = (artisanHopperBlockEntity, artisanMachinePos, player, 
               recipes,
               resolvedRecipeId,
               upgraded,
+              artisanHopperBlockEntity.getBoolean("aged_prize"),
             );
           }
           let sparkstoneSaveChance = 0;
-          if (artisanMachine.properties.get("slouching_towards_artistry")) {
+          if (artisanHopperBlockEntity.getBoolean("slouching_towards_artistry")) {
             sparkstoneSaveChance = Number(currentStage) * 0.05;
           }
           if (!recycleSparkstone && Math.random() > sparkstoneSaveChance) {
@@ -522,8 +524,8 @@ global.artisanHopperScan = (entity, radius) => {
   level.getServer().players.forEach((p) => {
     if (p.getUuid().toString() === block.getEntityData().data.owner) {
       attachedPlayer = p;
-      for (stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
-        entity.data.putBoolean(stage_name, attachedPlayer ? attachedPlayer.stages.has(stage) : false);
+      for (const stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
+        entity.data.putBoolean(stage, attachedPlayer ? attachedPlayer.stages.has(stage) : false);
       }
     }
   });

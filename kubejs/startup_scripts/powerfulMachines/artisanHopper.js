@@ -527,7 +527,11 @@ global.artisanHopperScan = (entity, radius) => {
     }
   });
   for (const stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
-    entity.data.putBoolean(stage, attachedPlayer ? attachedPlayer.stages.has(stage) : false);
+    if (attachedPlayer) {
+      entity.data.putBoolean(stage, attachedPlayer.stages.has(stage));
+    } else if (!entity.data.contains(stage)) {
+      entity.data.putBoolean(stage, false);
+    }
   }
   let scanBlock;
   let scannedBlocks = 0;

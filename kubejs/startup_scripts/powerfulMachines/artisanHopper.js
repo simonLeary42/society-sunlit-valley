@@ -529,8 +529,10 @@ global.artisanHopperScan = (entity, radius) => {
   for (const stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
     if (attachedPlayer) {
       entity.data.putBoolean(stage, attachedPlayer.stages.has(stage));
+      entity.save();
     } else if (!entity.data.contains(stage)) {
       entity.data.putBoolean(stage, false);
+      entity.save();
     }
   }
   let scanBlock;

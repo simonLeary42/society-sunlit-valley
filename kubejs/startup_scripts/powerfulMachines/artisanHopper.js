@@ -442,8 +442,10 @@ global.runArtisanHopper = (artisanHopperBlockEntity, artisanMachinePos, player, 
         !aboveBlock.inventory.isEmpty()
       ) {
         let aboveBlockData = aboveBlock.getEntityData();
-        if (player && aboveBlockData && aboveBlockData.toString().includes("filter_upgrade")) {
-          player.tell(Text.translatable("block.society.artisan_hopper.filter").red());
+        if (aboveBlockData && aboveBlockData.toString().includes("filter_upgrade")) {
+          if (player) {
+            player.tell(Text.translatable("block.society.artisan_hopper.filter").red());
+          }
           return;
         }
         let slots = aboveBlock.inventory.getSlots();

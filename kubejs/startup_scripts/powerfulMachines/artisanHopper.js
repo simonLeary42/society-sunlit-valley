@@ -91,7 +91,7 @@ global.handleAdditionalArtisanMachineOutputs = (
 /**
  * @param {Internal.BlockContainerJS} block
  */
-global.getArtisanMachineData = (block, upgraded, rancher, ancientAging) => {
+global.getArtisanMachineData = (block, upgraded, rancher, ancientAging, canadianAndFamous) => {
   let machineData = {
     recipes: [],
     stageCount: 0,
@@ -248,7 +248,7 @@ global.getArtisanMachineData = (block, upgraded, rancher, ancientAging) => {
         recipes: global.tapperRecipes,
         stageCount: 1,
         soundType: "vinery:cabinet_close",
-        outputMult: stages.has("canadian_and_famous") ? 2 : 1,
+        outputMult: canadianAndFamous ? 2 : 1,
       };
       break;
     case "society:mushroom_log":
@@ -283,11 +283,11 @@ global.runArtisanHopper = (artisanHopperBlockEntity, artisanMachinePos, player, 
     const nbt = artisanMachine.getEntityData();
     if (!nbt || !nbt.data) return;
     const upgraded = artisanMachine.properties.get("upgraded") == "true";
+    const rancher = artisanHopperBlockEntity.data.getBoolean("rancher");
+    const ancientAging = artisanHopperBlockEntity.data.getBoolean("ancient_aging");
+    const canadianAndFamous = artisanHopperBlockEntity.data.getBoolean("canadian_and_famous");
     const loadedData = global.getArtisanMachineData(
-      artisanMachine,
-      upgraded,
-      artisanHopperBlockEntity.data.getBoolean("rancher"),
-      artisanHopperBlockEntity.data.getBoolean("ancient_aging")
+        artisanMachine, upgraded, rancher, ancientAging, canadianAndFamous
     );
     const season = global.getSeasonFromLevel(level);
     const chargingRodOutput = Item.of(
@@ -390,11 +390,11 @@ global.runArtisanHopper = (artisanHopperBlockEntity, artisanMachinePos, player, 
               recipes,
               resolvedRecipeId,
               upgraded,
-              artisanHopperBlockEntity.getBoolean("aged_prize"),
+              artisanHopperBlockEntity.data.getBoolean("aged_prize"),
             );
           }
           let sparkstoneSaveChance = 0;
-          if (artisanHopperBlockEntity.getBoolean("slouching_towards_artistry")) {
+          if (artisanHopperBlockEntity.data.getBoolean("slouching_towards_artistry")) {
             sparkstoneSaveChance = Number(currentStage) * 0.05;
           }
           if (!recycleSparkstone && Math.random() > sparkstoneSaveChance) {
@@ -526,7 +526,10 @@ global.artisanHopperScan = (entity, radius) => {
       attachedPlayer = p;
     }
   });
-  for (const stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
+  const stagesToStore = [
+    "slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize", "canadian_and_famous"
+  ];
+  for (const stage of stagesToStore) {
     if (attachedPlayer) {
       entity.data.putBoolean(stage, attachedPlayer.stages.has(stage));
       entity.save();

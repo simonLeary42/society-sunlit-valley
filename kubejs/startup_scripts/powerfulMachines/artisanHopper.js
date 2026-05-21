@@ -524,11 +524,11 @@ global.artisanHopperScan = (entity, radius) => {
   level.getServer().players.forEach((p) => {
     if (p.getUuid().toString() === block.getEntityData().data.owner) {
       attachedPlayer = p;
-      for (const stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
-        entity.data.putBoolean(stage, attachedPlayer ? attachedPlayer.stages.has(stage) : false);
-      }
     }
   });
+  for (const stage of ["slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize"]) {
+    entity.data.putBoolean(stage, attachedPlayer ? attachedPlayer.stages.has(stage) : false);
+  }
   let scanBlock;
   let scannedBlocks = 0;
   for (let pos of BlockPos.betweenClosed(

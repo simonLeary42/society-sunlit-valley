@@ -532,15 +532,17 @@ global.artisanHopperScan = (entity, radius) => {
   const stagesToStore = [
     "slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize", "canadian_and_famous"
   ];
-  let nbt = block.getEntityData();
+  let newData = {};
   for (const stage of stagesToStore) {
     if (attachedPlayer) {
-      nbt.merge({ data: { stage: attachedPlayer.stages.has(stage) } });
+      newData[stage] = attachedPlayer.stages.has(stage);
     } else if (!nbt.contains(stage)) {
-      nbt.merge({ data: { stage: false } });
+      newData[stage] = false;
     }
   }
-  global.setBlockEntityData(block, nbt);
+  if (Object.keys(newData).length > 0) {
+    global.setBlockEntityData(block, block.getEntityData().merge({ data: newData }));
+  }
   let scanBlock;
   let scannedBlocks = 0;
   for (let pos of BlockPos.betweenClosed(

@@ -281,11 +281,12 @@ global.runArtisanHopper = (artisanHopperBlockEntity, artisanMachinePos, player, 
     const artisanMachine = level.getBlock(artisanMachinePos);
     const { x, y, z } = artisanMachine;
     const nbt = artisanMachine.getEntityData();
+    const artisanHopperNbt = artisanHopperBlockEntity.getEntityData();
     if (!nbt || !nbt.data) return;
     const upgraded = artisanMachine.properties.get("upgraded") == "true";
-    const rancher = artisanHopperBlockEntity.data.getBoolean("rancher");
-    const ancientAging = artisanHopperBlockEntity.data.getBoolean("ancient_aging");
-    const canadianAndFamous = artisanHopperBlockEntity.data.getBoolean("canadian_and_famous");
+    const rancher = artisanHopperNbt.getBoolean("rancher");
+    const ancientAging = artisanHopperNbt.getBoolean("ancient_aging");
+    const canadianAndFamous = artisanHopperNbt.getBoolean("canadian_and_famous");
     const loadedData = global.getArtisanMachineData(
         artisanMachine, upgraded, rancher, ancientAging, canadianAndFamous
     );
@@ -390,11 +391,11 @@ global.runArtisanHopper = (artisanHopperBlockEntity, artisanMachinePos, player, 
               recipes,
               resolvedRecipeId,
               upgraded,
-              artisanHopperBlockEntity.data.getBoolean("aged_prize"),
+              artisanHopperNbt.getBoolean("aged_prize"),
             );
           }
           let sparkstoneSaveChance = 0;
-          if (artisanHopperBlockEntity.data.getBoolean("slouching_towards_artistry")) {
+          if (artisanHopperNbt.getBoolean("slouching_towards_artistry")) {
             sparkstoneSaveChance = Number(currentStage) * 0.05;
           }
           if (!recycleSparkstone && Math.random() > sparkstoneSaveChance) {
@@ -531,15 +532,15 @@ global.artisanHopperScan = (entity, radius) => {
   const stagesToStore = [
     "slouching_towards_artistry", "ancient_aging", "rancher", "aged_prize", "canadian_and_famous"
   ];
+  let nbt = block.getEntityData();
   for (const stage of stagesToStore) {
     if (attachedPlayer) {
-      entity.data.putBoolean(stage, attachedPlayer.stages.has(stage));
-      entity.save();
-    } else if (!entity.data.contains(stage)) {
-      entity.data.putBoolean(stage, false);
-      entity.save();
+      nbt.merge({ data: { stage: attachedPlayer.stages.has(stage) } });
+    } else if (!nbt.contains(stage)) {
+      nbt.merge({ data: { stage: false } });
     }
   }
+  global.setBlockEntityData(block, nbt);
   let scanBlock;
   let scannedBlocks = 0;
   for (let pos of BlockPos.betweenClosed(
